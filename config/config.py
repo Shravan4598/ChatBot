@@ -53,7 +53,9 @@ class Settings:
     # Weather API
     # =========================
     WEATHER_API_KEY: str = os.getenv("WEATHER_API_KEY", "")
-
+    ALPHA_VANTAGE_API_KEY: str = os.getenv(
+    "ALPHA_VANTAGE_API_KEY",
+    "")
     # =========================
     # Embeddings
     # =========================
