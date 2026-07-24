@@ -9,9 +9,8 @@ pydantic==2.10.6
 pydantic-settings==2.7.1
 
 
-
 # ==============================
-# LangChain
+# LangChain Stack
 # ==============================
 
 langchain==0.3.19
@@ -20,8 +19,11 @@ langchain-core==0.3.37
 
 langchain-community==0.3.18
 
+langchain-text-splitters==0.3.6
 
-langgraph==1.0.5
+
+# LangGraph compatible with LangChain 0.3
+langgraph==0.2.74
 
 langgraph-checkpoint-sqlite==2.0.5
 
@@ -40,8 +42,6 @@ google-generativeai==0.8.4
 # ==============================
 # RAG / Vector Database
 # ==============================
-
-chromadb==0.6.3
 
 faiss-cpu==1.10.0
 
@@ -64,24 +64,21 @@ duckduckgo-search==7.5.2
 
 youtube-transcript-api==1.0.3
 
-
 requests==2.32.3
 
 beautifulsoup4==4.13.3
-
 
 yfinance==0.2.54
 
 
 
 # ==============================
-# Data Processing
+# Data
 # ==============================
 
 numpy==2.2.3
 
 pandas==2.2.3
-
 
 tiktoken==0.9.0
 
@@ -96,7 +93,7 @@ sqlalchemy==2.0.38
 
 
 # ==============================
-# Streamlit UI
+# Streamlit
 # ==============================
 
 streamlit==1.42.2
@@ -104,7 +101,7 @@ streamlit==1.42.2
 
 
 # ==============================
-# API / Deployment
+# API
 # ==============================
 
 fastapi==0.115.8
