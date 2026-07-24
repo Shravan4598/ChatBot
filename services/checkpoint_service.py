@@ -162,3 +162,133 @@ class CheckpointService:
             "database": settings.CHECKPOINT_DB_PATH,
             "backend": "SQLite",
         }
+    # ==============================================================
+    # Connection Alias
+    # ==============================================================
+
+    @classmethod
+    def connection(cls) -> sqlite3.Connection:
+        """
+        Alias for get_connection().
+        """
+
+        return cls.get_connection()
+
+
+    # ==============================================================
+    # Thread Exists
+    # ==============================================================
+
+    @classmethod
+    def thread_exists(
+        cls,
+        thread_id: str,
+    ) -> bool:
+        """
+        Check whether checkpoints exist for a thread.
+        """
+
+        try:
+
+            return thread_id in cls.list_threads()
+
+        except Exception as e:
+
+            raise ChatBotException(e)
+
+
+    # ==============================================================
+    # Delete Thread Checkpoints
+    # ==============================================================
+
+    @classmethod
+    def clear_thread(
+        cls,
+        thread_id: str,
+    ) -> None:
+        """
+        Delete checkpoints for a specific thread.
+
+        NOTE:
+        LangGraph currently doesn't expose an official API
+        to delete checkpoints individually.
+        This method is left as a placeholder for future versions.
+        """
+
+        logging.warning(
+            "Checkpoint deletion is not supported by "
+            "LangGraph SQLite yet. Thread=%s",
+            thread_id,
+        )
+
+
+    # ==============================================================
+    # Clear All Checkpoints
+    # ==============================================================
+
+    @classmethod
+    def clear_all(cls) -> None:
+        """
+        Remove every checkpoint from SQLite.
+        """
+
+        try:
+
+            conn = cls.get_connection()
+
+            cursor = conn.cursor()
+
+            tables = [
+
+                "checkpoints",
+
+                "checkpoint_blobs",
+
+                "checkpoint_writes",
+
+            ]
+
+            for table in tables:
+
+                try:
+
+                    cursor.execute(
+                        f"DELETE FROM {table}"
+                    )
+
+                except Exception:
+
+                    pass
+
+            conn.commit()
+
+            logging.info(
+                "All checkpoints removed."
+            )
+
+        except Exception as e:
+
+            raise ChatBotException(e)
+
+
+    # ==============================================================
+    # Health Check
+    # ==============================================================
+
+    @classmethod
+    def ping(cls) -> bool:
+        """
+        Verify SQLite connection.
+        """
+
+        try:
+
+            cls.get_connection().execute(
+                "SELECT 1"
+            )
+
+            return True
+
+        except Exception:
+
+            return False

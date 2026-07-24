@@ -42,6 +42,7 @@ class LLMService:
                     settings.GEMINI_MODEL,
                 )
 
+                
                 cls._instance = ChatGoogleGenerativeAI(
                     model=settings.GEMINI_MODEL,
                     google_api_key=settings.GOOGLE_API_KEY,
@@ -97,3 +98,26 @@ class LLMService:
             "max_retries": settings.MAX_RETRIES,
             "streaming": True,
         }
+    @classmethod
+    def stream_response(
+        cls,
+        messages,
+    ):
+        """
+        Stream Gemini response token by token.
+        """
+
+        try:
+
+            llm = cls.get_llm()
+
+            for chunk in llm.stream(messages):
+
+                if chunk.content:
+
+                    yield chunk.content
+
+
+        except Exception as e:
+
+            raise ChatBotException(e)
