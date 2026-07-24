@@ -75,6 +75,7 @@ class Settings:
     # =========================
     # Uploaded Documents
     # =========================
+    UPLOAD_DIRECTORY = "data/uploads"
     DOCUMENT_PATH: str = os.getenv(
         "DOCUMENT_PATH",
         "data/uploads",
