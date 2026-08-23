@@ -7,18 +7,22 @@ Configuration module for the AI ChatBot project.
 - Avoids printing secret values; logs that configuration loaded (without secrets).
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import os
 from dotenv import load_dotenv
+from typing import List
+
 from core.logger import logger
 
 # Load .env from project root (this will silently succeed if there's no .env)
 load_dotenv()
 
+
 def _parse_bool(value: str, default: bool = False) -> bool:
     if value is None:
         return default
     return str(value).strip().lower() in ("1", "true", "yes", "y", "on")
+
 
 def _parse_int(value: str, default: int) -> int:
     try:
@@ -28,6 +32,7 @@ def _parse_int(value: str, default: int) -> int:
     except (ValueError, TypeError):
         return default
 
+
 def _parse_float(value: str, default: float) -> float:
     try:
         if value is None or value == "":
@@ -35,6 +40,11 @@ def _parse_float(value: str, default: float) -> float:
         return float(value)
     except (ValueError, TypeError):
         return default
+
+
+def _default_transcript_languages() -> List[str]:
+    return os.getenv("TRANSCRIPT_LANGUAGES", "en,en-US,en-GB").split(",")
+
 
 @dataclass
 class Settings:
@@ -49,7 +59,7 @@ class Settings:
     LANGSMITH_ENDPOINT: str = os.getenv("LANGSMITH_ENDPOINT", "https://api.smith.langchain.com")
 
     # Transcript languages used by YouTube loader (preferred order)
-    TRANSCRIPT_LANGUAGES: list = os.getenv("TRANSCRIPT_LANGUAGES", "en,en-US,en-GB").split(",")
+    TRANSCRIPT_LANGUAGES: List[str] = field(default_factory=_default_transcript_languages)
 
     # External APIs (weather/finance)
     WEATHER_API_KEY: str = os.getenv("WEATHER_API_KEY", "")
@@ -84,9 +94,13 @@ class Settings:
     REQUESTS_PER_MINUTE: int = _parse_int(os.getenv("REQUESTS_PER_MINUTE", None), 60)
     CHECKPOINT_DB_PATH: str = os.getenv("CHECKPOINT_DB_PATH", "data/checkpoints/checkpoints.db")
 
+
 # Instantiate a settings object that can be imported elsewhere:
 settings = Settings()
 
 # Log configuration loaded (do not log secret values)
 masked_gemini = "<set>" if bool(settings.GEMINI_API_KEY) else "<not set>"
-logger.info(f"Configuration loaded. Gemini key present: {masked_gemini}. Vector DB: {settings.VECTOR_DB}. Langsmith: {'set' if settings.LANGSMITH_API_KEY else 'not-set'}.")
+logger.info(
+    f"Configuration loaded. Gemini key present: {masked_gemini}. Vector DB: {settings.VECTOR_DB}. "
+    f"Langsmith: {'set' if settings.LANGSMITH_API_KEY else 'not-set'}."
+)

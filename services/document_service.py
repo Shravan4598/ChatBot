@@ -12,6 +12,7 @@ Responsibilities
 - Return document metadata
 - Delete uploaded files
 - List uploaded files
+- Expose rag availability (whether documents have been uploaded)
 """
 
 from __future__ import annotations
@@ -33,6 +34,7 @@ _SUPPORTED_DOCS_CANDIDATES = (
     getattr(constants, "SUPPORTED_DOC_EXTENSIONS", None),
 )
 
+
 def _normalize_supported(s: Iterable[str] | None) -> Tuple[str, ...]:
     if s is None:
         return (".pdf", ".txt", ".docx", ".md", ".pptx")
@@ -47,6 +49,7 @@ def _normalize_supported(s: Iterable[str] | None) -> Tuple[str, ...]:
         out.append(v)
     return tuple(sorted(set(out)))
 
+
 SUPPORTED_DOCUMENTS = None
 for candidate in _SUPPORTED_DOCS_CANDIDATES:
     if candidate:
@@ -55,6 +58,7 @@ for candidate in _SUPPORTED_DOCS_CANDIDATES:
 
 if SUPPORTED_DOCUMENTS is None:
     SUPPORTED_DOCUMENTS = _normalize_supported(None)
+
 
 class DocumentService:
     """
@@ -168,6 +172,20 @@ class DocumentService:
                         }
                     )
             return documents
+        except Exception as e:
+            raise ChatBotException(e)
+
+    # ============================================================
+    # RAG Availability
+    # ============================================================
+    def rag_available(self) -> bool:
+        """
+        Return True if there are uploaded documents for this thread (RAG available).
+        """
+        try:
+            # Simple heuristic: if there are any uploaded files, RAG is available.
+            files = self.list_files()
+            return len(files) > 0
         except Exception as e:
             raise ChatBotException(e)
 
