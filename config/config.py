@@ -52,6 +52,9 @@ class Settings:
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
     GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
+    # Backwards-compatible Google key (fall back to GEMINI_API_KEY)
+    GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", os.getenv("GEMINI_API_KEY", ""))
+
     # Langsmith / LangGraph
     LANGSMITH_API_KEY: str = os.getenv("LANGSMITH_API_KEY", "")
     LANGSMITH_PROJECT: str = os.getenv("LANGSMITH_PROJECT", "ChatBot")
@@ -77,9 +80,19 @@ class Settings:
     UPLOAD_DIRECTORY: str = os.getenv("UPLOAD_DIRECTORY", os.getenv("DOCS_DIR", "data/uploads"))
 
     # LLM runtime hyperparameters
+    # Keep LLM_TEMPERATURE as canonical, allow TEMPERATURE alias
     LLM_TEMPERATURE: float = _parse_float(os.getenv("LLM_TEMPERATURE", None), 0.3)
+    TEMPERATURE: float = _parse_float(os.getenv("TEMPERATURE", None), LLM_TEMPERATURE)
+
     MAX_OUTPUT_TOKENS: int = _parse_int(os.getenv("MAX_OUTPUT_TOKENS", None), 2048)
     REQUEST_TIMEOUT: int = _parse_int(os.getenv("REQUEST_TIMEOUT", None), 30)
+
+    # Gemini-specific tuning defaults (backwards-compatible names)
+    GEMINI_TOP_P: float = _parse_float(os.getenv("GEMINI_TOP_P", None), 0.95)
+    GEMINI_TOP_K: int = _parse_int(os.getenv("GEMINI_TOP_K", None), 40)
+
+    # Retry behavior for API calls
+    MAX_RETRIES: int = _parse_int(os.getenv("MAX_RETRIES", None), 3)
 
     # Chunking / ingestion
     CHUNK_SIZE: int = _parse_int(os.getenv("CHUNK_SIZE", None), 1000)
