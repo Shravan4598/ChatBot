@@ -1,3 +1,4 @@
+# tools/rag_tool.py
 """
 tools/rag_tool.py
 
@@ -13,7 +14,7 @@ Responsibilities
 from __future__ import annotations
 
 from core.exception import ChatBotException
-from core.logger import logging
+from core.logger import logger
 
 from tools.base_tool import BaseTool
 from rag.rag_service import RAGService
@@ -25,12 +26,8 @@ class RAGTool(BaseTool):
     """
 
     def __init__(self) -> None:
-
         self.rag_service = RAGService()
-
-        logging.info(
-            "RAG Tool initialized."
-        )
+        logger.info("RAG Tool initialized.")
 
     # ==========================================================
     # Properties
@@ -38,12 +35,10 @@ class RAGTool(BaseTool):
 
     @property
     def name(self) -> str:
-
         return "rag_tool"
 
     @property
     def description(self) -> str:
-
         return (
             "Answer questions using uploaded "
             "documents only."
@@ -52,85 +47,43 @@ class RAGTool(BaseTool):
     # ==========================================================
     # Ask Question
     # ==========================================================
-
-    def invoke(
-        self,
-        question: str,
-    ) -> str:
+    def invoke(self, question: str) -> str:
         """
         Ask a question over uploaded documents.
         """
-
         try:
-
-            logging.info(
-                "Running RAG query."
-            )
-
-            response = self.rag_service.ask(
-                question
-            )
-
-            logging.info(
-                "RAG response generated."
-            )
-
+            logger.info("Running RAG query.")
+            response = self.rag_service.ask(question)
+            logger.info("RAG response generated.")
             return response
-
         except Exception as e:
-
             raise ChatBotException(e)
 
     # ==========================================================
     # Index Documents
     # ==========================================================
-
-    def ingest(
-        self,
-        file_path: str,
-    ) -> None:
+    def ingest(self, file_path: str) -> None:
         """
         Build vector database from a document.
         """
-
         try:
-
-            logging.info(
-                "Indexing document : %s",
-                file_path,
-            )
-
-            self.rag_service.ingest(
-                file_path
-            )
-
-            logging.info(
-                "Document indexed successfully."
-            )
-
+            logger.info("Indexing document : %s", file_path)
+            # RAGService provides build(source) to create the pipeline from a source.
+            self.rag_service.build(file_path)
+            logger.info("Document indexed successfully.")
         except Exception as e:
-
             raise ChatBotException(e)
 
     # ==========================================================
     # Status
     # ==========================================================
-
     @property
     def ready(self) -> bool:
-
-        return self.rag_service.is_ready
+        return self.rag_service.ready
 
     # ==========================================================
     # Reset
     # ==========================================================
-
-    def reset(
-        self,
-    ) -> None:
-
+    def reset(self) -> None:
         self.rag_service.reset()
-
-        logging.info(
-            "RAG Tool reset."
-        )
+        logger.info("RAG Tool reset.")
