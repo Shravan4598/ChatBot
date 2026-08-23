@@ -1,66 +1,48 @@
+  # core/logger.py
 """
-Centralized logging configuration for the AI Chatbot project.
-
-This module creates a timestamped log file and configures
-both file and console logging.
+Central logging setup for the AI ChatBot project.
+Creates a timestamped file logger in logs/ and a console handler.
+Idempotent: re-importing this module won't add duplicate handlers.
 """
 
 import logging
 import os
 from datetime import datetime
+from pathlib import Path
 
-# -------------------------------------------------------------------
-# Create Logs Directory
-# -------------------------------------------------------------------
+# Default log directory
+LOG_ROOT = Path(os.getenv("LOG_ROOT", "logs"))
+LOG_ROOT.mkdir(parents=True, exist_ok=True)
 
-PROJECT_ROOT = os.getcwd()
+# Create a time-stamped log filename
+timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+LOG_FILENAME = f"chatbot_{timestamp}.log"
+LOG_PATH = LOG_ROOT / LOG_FILENAME
 
-LOG_DIR = os.path.join(PROJECT_ROOT, "logs")
-os.makedirs(LOG_DIR, exist_ok=True)
+# Logger instance
+logger = logging.getLogger("AIChatBot")
+logger.setLevel(logging.INFO)
 
-# -------------------------------------------------------------------
-# Log File
-# -------------------------------------------------------------------
+# Formatting
+formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
-LOG_FILE_NAME = datetime.now().strftime("%Y_%m_%d_%H_%M_%S") + ".log"
-
-LOG_FILE_PATH = os.path.join(LOG_DIR, LOG_FILE_NAME)
-
-# -------------------------------------------------------------------
-# Logger Configuration
-# -------------------------------------------------------------------
-
-LOGGER_NAME = "AIChatBot"
-
-logger = logging.getLogger(LOGGER_NAME)
-
+# Avoid adding duplicate handlers if module is reloaded
 if not logger.handlers:
+    # File handler
+    try:
+        fh = logging.FileHandler(LOG_PATH, encoding="utf-8")
+        fh.setLevel(logging.INFO)
+        fh.setFormatter(formatter)
+        logger.addHandler(fh)
+    except Exception:
+        # If file handler cannot be created (permissions, readonly FS), continue with console only
+        pass
 
-    logger.setLevel(logging.INFO)
+    # Console handler
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
 
-    formatter = logging.Formatter(
-        "[%(asctime)s] [%(levelname)s] "
-        "[%(filename)s:%(lineno)d] - %(message)s"
-    )
-
-    # ---------------- File Handler ----------------
-
-    file_handler = logging.FileHandler(
-        LOG_FILE_PATH,
-        encoding="utf-8"
-    )
-
-    file_handler.setFormatter(formatter)
-
-    # ---------------- Console Handler ----------------
-
-    console_handler = logging.StreamHandler()
-
-    console_handler.setFormatter(formatter)
-
-    # ---------------- Add Handlers ----------------
-
-    logger.addHandler(file_handler)
-    logger.addHandler(console_handler)
-
-    logger.propagate = False
+# Public API: logger
+__all__ = ["logger"]
