@@ -4,11 +4,12 @@ CheckpointService
 
 Singleton service that provides LangGraph SQLite checkpointer integration.
 
-Notes:
-- The LangGraph SqliteSaver is an optional dependency. Import it lazily so
-  the application can still import this module even if langgraph is not installed.
-- If the application tries to obtain a checkpointer and langgraph is missing,
-  we raise a clear ChatBotException with actionable installation instructions.
+This implementation is defensive:
+- It attempts a lazy import of the LangGraph SqliteSaver.
+- If the class is not available, get_checkpointer() returns None instead of raising,
+  so the rest of the application can continue to run without checkpointing.
+- Methods that require a checkpointer will raise ChatBotException only when they're
+  actually invoked and the checkpointer is missing.
 """
 
 from __future__ import annotations
@@ -21,9 +22,7 @@ from config.config import settings
 from core.exception import ChatBotException
 from core.logger import logger
 
-# We import SqliteSaver lazily in get_checkpointer() to avoid hard
-# dependency at import-time (which makes the whole app fail if langgraph isn't installed).
-_SqliteSaverType = None  # type: ignore
+_SqliteSaverType = None  # lazily populated if available
 
 
 class CheckpointService:
@@ -35,31 +34,24 @@ class CheckpointService:
     _checkpointer = None
 
     @classmethod
-    def _ensure_sqlitesaver_available(cls):
+    def _try_import_sqlitesaver(cls) -> bool:
         """
-        Attempt to import the LangGraph SqliteSaver. Raise ChatBotException with
-        instructions if not available.
+        Attempt to import LangGraph SqliteSaver lazily.
+        Returns True if available, False otherwise.
+        Does not raise — logs the reason on failure.
         """
         global _SqliteSaverType
         if _SqliteSaverType is not None:
-            return
+            return True
 
         try:
-            # Import lazily
             mod = __import__("langgraph.checkpoint.sqlite", fromlist=["SqliteSaver"])
             _SqliteSaverType = getattr(mod, "SqliteSaver")
+            return True
         except Exception as e:
-            # Provide actionable message
-            raise ChatBotException(
-                RuntimeError(
-                    "LangGraph SqliteSaver is not available. "
-                    "If you want to use LangGraph checkpointing, please install the 'langgraph' package "
-                    "that provides the checkpoint backend. For example:\n\n"
-                    "    pip install langgraph\n\n"
-                    "Or, if the project uses a particular installation method, follow its README for installation.\n\n"
-                    f"Original import error: {e}"
-                )
-            ) from e
+            logger.debug("LangGraph SqliteSaver not available: %s", e)
+            _SqliteSaverType = None
+            return False
 
     @classmethod
     def get_connection(cls) -> sqlite3.Connection:
@@ -88,26 +80,28 @@ class CheckpointService:
     @classmethod
     def get_checkpointer(cls):
         """
-        Return a LangGraph SqliteSaver checkpointer instance.
+        Return a LangGraph SqliteSaver checkpointer instance or None if unavailable.
 
-        This method lazily imports the required LangGraph SqliteSaver class
-        and constructs a checkpointer bound to the module's SQLite connection.
+        This method will NOT raise if the LangGraph SqliteSaver is not present.
+        It will return None, allowing callers to continue without checkpointing.
         """
         try:
-            if cls._checkpointer is None:
-                # Ensure the SqliteSaver type is available (lazily import)
-                cls._ensure_sqlitesaver_available()
+            if cls._checkpointer is not None:
+                return cls._checkpointer
 
-                # Construct SqliteSaver using the sqlite connection
-                logger.info("Initializing LangGraph Checkpointer...")
-                cls._checkpointer = _SqliteSaverType(conn=cls.get_connection())
-                logger.info("Checkpointer initialized successfully.")
+            if not cls._try_import_sqlitesaver():
+                # Not available — do not raise here, allow caller to decide behavior
+                logger.info("LangGraph SqliteSaver not available; checkpointing disabled.")
+                return None
 
+            # Construct SqliteSaver using the sqlite connection
+            logger.info("Initializing LangGraph Checkpointer...")
+            cls._checkpointer = _SqliteSaverType(conn=cls.get_connection())
+            logger.info("Checkpointer initialized successfully.")
             return cls._checkpointer
-        except ChatBotException:
-            # Re-raise ChatBotException raised by _ensure_sqlitesaver_available
-            raise
+
         except Exception as e:
+            # If unexpected error occurs while creating checkpointer, wrap and raise.
             raise ChatBotException(e)
 
     # ==============================================================
@@ -133,29 +127,27 @@ class CheckpointService:
         """
         Return all stored thread IDs.
 
-        This relies on the underlying SqliteSaver providing a list(None) method
-        that enumerates checkpoints. If langgraph is not installed, this will raise
-        a ChatBotException with instructions.
+        If the checkpointer is not available, raise ChatBotException indicating checkpointing is disabled.
         """
         try:
             checkpointer = cls.get_checkpointer()
-            thread_ids = set()
+            if checkpointer is None:
+                raise ChatBotException(RuntimeError("Checkpointing is not available. Install langgraph to enable checkpoints."))
 
-            # The SqliteSaver API exposes list(checkpoint_key_or_none)
+            thread_ids = set()
             for checkpoint in checkpointer.list(None):
-                # Many checkpointer configs store thread_id under configurable keys
                 cfg = checkpoint.config if isinstance(checkpoint, dict) else getattr(checkpoint, "config", {})
-                # Best-effort extraction
-                thread_id = (
-                    cfg.get("configurable", {}).get("thread_id")
-                    or cfg.get("configurable", {}).get("thread")
-                    or cfg.get("thread_id")
-                    or (checkpoint.config["configurable"]["thread_id"] if "configurable" in cfg and "thread_id" in cfg["configurable"] else None)
-                )
+                # Best-effort extraction of thread_id
+                thread_id = None
+                if isinstance(cfg, dict):
+                    thread_id = cfg.get("configurable", {}).get("thread_id") or cfg.get("thread_id")
+                if not thread_id:
+                    # try attribute access
+                    thread_id = getattr(checkpoint, "task_id", None) or getattr(checkpoint, "thread_id", None)
                 if thread_id:
                     thread_ids.add(thread_id)
-
             return sorted(thread_ids)
+
         except ChatBotException:
             raise
         except Exception as e:
@@ -168,7 +160,7 @@ class CheckpointService:
         """
         Return checkpoint configuration info.
         """
-        return {"database": getattr(settings, "CHECKPOINT_DB_PATH", "data/checkpoints/checkpoints.db"), "backend": "LangGraph-SQLite"}
+        return {"database": getattr(settings, "CHECKPOINT_DB_PATH", "data/checkpoints/checkpoints.db"), "backend": "LangGraph-SQLite" if cls._try_import_sqlitesaver() else "None"}
 
     # ==============================================================
 
@@ -187,6 +179,23 @@ class CheckpointService:
         Check whether checkpoints exist for a thread.
         """
         try:
+            checkpointer = cls.get_checkpointer()
+            if checkpointer is None:
+                raise ChatBotException(RuntimeError("Checkpointing is not available. Install langgraph to enable checkpoints."))
             return thread_id in cls.list_threads()
+        except ChatBotException:
+            raise
         except Exception as e:
             raise ChatBotException(e)
+
+    # ==============================================================
+
+    @classmethod
+    def ping(cls) -> bool:
+        """
+        Simple health check for checkpointing. Returns True if checkpointer available.
+        """
+        try:
+            return cls.get_checkpointer() is not None
+        except Exception:
+            return False

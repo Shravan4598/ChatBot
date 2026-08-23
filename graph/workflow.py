@@ -202,16 +202,28 @@ class ChatbotWorkflow:
 
                 return self.__class__._compiled_graph
 
-            checkpoint = (
-                CheckpointService()
-                .get_checkpointer()
-            )
+            # Try to obtain a checkpointer, but tolerate its absence.
+            checkpoint = None
+            try:
+                checkpoint = (
+                    CheckpointService()
+                    .get_checkpointer()
+                )
+            except Exception as e:
+                # LangGraph / SqliteSaver is optional. Log and continue without checkpointing.
+                logging.warning(
+                    "LangGraph checkpointer is not available; continuing without checkpointing. Reason: %s",
+                    str(e),
+                )
+                checkpoint = None
 
-            graph = self.builder.compile(
-
-                checkpointer=checkpoint,
-
-            )
+            # Compile with or without checkpointer depending on availability
+            if checkpoint is not None:
+                graph = self.builder.compile(
+                    checkpointer=checkpoint,
+                )
+            else:
+                graph = self.builder.compile()
 
             self.__class__._compiled_graph = graph
 
