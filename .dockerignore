@@ -1,0 +1,33 @@
+# Python
+__pycache__
+*.pyc
+*.pyo
+
+
+# Environment
+.env
+.venv
+venv
+
+
+# Git
+.git
+.gitignore
+
+
+# Streamlit
+.streamlit
+
+
+# Data
+data/*
+uploads/*
+logs/*
+
+
+# Vector database
+chroma_db/*
+
+
+# Notebook
+*.ipynb
