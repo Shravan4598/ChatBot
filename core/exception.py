@@ -1,50 +1,46 @@
+# core/exception.py
 """
-Custom exception module for the AI Chatbot project.
-
-Provides a reusable custom exception that captures the
-file name, line number, and original error message.
+Custom exception helpers for the AI ChatBot project.
+Provides a helpful formatting function for exception details and a wrapper exception type.
 """
 
-import sys
 from typing import Any
+import traceback
 
-
-def error_message_detail(error: Exception, error_detail: Any) -> str:
+def error_message_detail(error: Exception, error_detail: Any = None) -> str:
     """
-    Create a detailed error message with file name and line number.
-
-    Args:
-        error (Exception): Original exception.
-        error_detail (Any): sys module.
-
-    Returns:
-        str: Formatted error message.
+    Create a formatted error message containing file, line and message.
+    - error: the caught exception
+    - error_detail: optional additional context
     """
-    _, _, exc_tb = error_detail.exc_info()
+    try:
+        tb = error.__traceback__
+        if tb is not None:
+            last_tb = traceback.extract_tb(tb)[-1]
+            file_name = getattr(last_tb, "filename", "<unknown>")
+            line_no = getattr(last_tb, "lineno", "<unknown>")
+        else:
+            file_name = "<no-traceback>"
+            line_no = "<no-line>"
+    except Exception:
+        file_name = "<error-inspecting-traceback>"
+        line_no = "<error>"
 
-    if exc_tb is None:
-        return str(error)
+    message = str(error) if error is not None else "<no-error-message>"
 
-    file_name = exc_tb.tb_frame.f_code.co_filename
-
-    return (
-        f"Error occurred in file: [{file_name}] "
-        f"at line: [{exc_tb.tb_lineno}] "
-        f"Message: [{str(error)}]"
-    )
-
+    if error_detail:
+        return f"Error occurred in file: [{file_name}] at line: [{line_no}] Message: [{message}] Detail: [{error_detail}]"
+    else:
+        return f"Error occurred in file: [{file_name}] at line: [{line_no}] Message: [{message}]"
 
 class ChatBotException(Exception):
     """
-    Custom exception class for the AI Chatbot project.
+    A wrapper exception that carries a formatted error message to be used across the project.
     """
 
-    def __init__(self, error: Exception, error_detail: Any):
+    def __init__(self, error: Exception, error_detail: Any = None):
         super().__init__(str(error))
-        self.error_message = error_message_detail(
-            error=error,
-            error_detail=error_detail,
-        )
+        self.error_message = error_message_detail(error, error_detail)
 
     def __str__(self) -> str:
-        return self.error_message
+        return getattr(self, "error_message", super().__str__())
