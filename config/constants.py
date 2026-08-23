@@ -23,6 +23,10 @@ VECTOR_STORE_DIR = DATA_DIR / "vectorstore"
 # Supported document extensions for ingestion
 SUPPORTED_DOC_EXTENSIONS = {".pdf", ".txt", ".docx", ".md", ".pptx"}
 
+# Backwards-compatible names expected in different modules
+SUPPORTED_DOCUMENTS = tuple(SUPPORTED_DOC_EXTENSIONS)
+ALLOWED_UPLOAD_SUFFIXES = SUPPORTED_DOCUMENTS
+
 # Default vector store options
 VECTOR_STORES = ("faiss", "chroma", "milvus")
 
@@ -40,9 +44,6 @@ TOOL_YOUTUBE = "youtube"
 # Message/session constants
 SESSION_MESSAGES = "messages"
 SESSION_HISTORY_KEY = "chat_history"
-
-# File upload allowed list (same as extensions but explicit)
-ALLOWED_UPLOAD_SUFFIXES = tuple(SUPPORTED_DOC_EXTENSIONS)
 
 # Timeouts and default values
 DEFAULT_REQUEST_TIMEOUT = 30  # seconds

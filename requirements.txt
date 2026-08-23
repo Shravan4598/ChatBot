@@ -1,31 +1,46 @@
-# Core
+# Core runtime
 python-dotenv>=1.0.0
 streamlit>=1.18.0
-
-# Logging & utilities
 python-multipart>=0.0.5
-
-# LangChain / LangGraph / RAG and LLM integrations
-langchain>=0.1.0
-
-# Embeddings and vector DB
-sentence-transformers>=2.2.2
-faiss-cpu>=1.7.4
-
-# Google generative models (Gemini) - adjust to the SDK you use
-google-generative-ai>=0.5.0
-
-# Optional depending on tools
 requests>=2.28.0
-youtube-transcript-api>=0.5.0
 
-# For document parsing
+# LangChain / LangGraph / LangGraph runtime
+# Note: LangGraph is used in this repo (StateGraph, checkpointers).
+langchain>=0.1.0
+langgraph
+
+# Gemini / Google generative API (optional if you use Gemini)
+google-genai>=1.0.0
+# LangChain adapter for Google generative (if using the LangChain wrapper)
+langchain-google-genai>=0.1.0
+
+# Embeddings and modeling (HuggingFace / sentence-transformers)
+sentence-transformers>=2.2.2
+transformers>=4.30.0
+torch>=1.12.0; platform_system != "Windows"  # on Windows choose the appropriate torch build
+# Optional LangChain HuggingFace adapter (only if your project uses it)
+langchain-huggingface>=0.1.0
+
+# Vector DBs
+faiss-cpu>=1.7.4    # FAISS (CPU). For GPU, install faiss-gpu per your environment.
+chromadb>=0.3.26    # Chroma (ChromaDB) if you plan to use Chroma vector store
+langchain-community>=0.1.0  # community integrations (vectorstore adaptors, tools)
+
+# Document & text utilities
 python-docx>=0.8.11
 PyPDF2>=3.0.0
+youtube-transcript-api>=0.5.0
 
-# For typing/runtime helpers
+# LangChain community tools (DuckDuckGo tool, others)
+langchain-community>=0.1.0
+
+# Optional LLM / embedding provider packages (pick per backend)
+# - For Google Generative AI embeddings: langchain-google-genai (above) and google-generative-ai
+# - For HuggingFace wrappers, ensure langchain-huggingface or langchain provides HuggingFaceEmbeddings
+
+# Type & runtime helpers
 pydantic>=1.10.0
 
-# Dev
+# Development tools (not required in production)
 black==23.9.1
 isort==5.12.0

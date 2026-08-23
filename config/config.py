@@ -4,7 +4,7 @@ Configuration module for the AI ChatBot project.
 
 - Loads environment variables from a .env file (using python-dotenv).
 - Exposes a Settings dataclass that holds configuration values parsed safely.
-- Avoids printing secret values; logs that configuration loaded successfully.
+- Avoids printing secret values; logs that configuration loaded (without secrets).
 """
 
 from dataclasses import dataclass
@@ -46,18 +46,25 @@ class Settings:
     LANGSMITH_API_KEY: str = os.getenv("LANGSMITH_API_KEY", "")
     LANGSMITH_PROJECT: str = os.getenv("LANGSMITH_PROJECT", "ChatBot")
     LANGSMITH_TRACKING: bool = _parse_bool(os.getenv("LANGSMITH_TRACKING", "true"))
-
     LANGSMITH_ENDPOINT: str = os.getenv("LANGSMITH_ENDPOINT", "https://api.smith.langchain.com")
+
+    # Transcript languages used by YouTube loader (preferred order)
+    TRANSCRIPT_LANGUAGES: list = os.getenv("TRANSCRIPT_LANGUAGES", "en,en-US,en-GB").split(",")
 
     # External APIs (weather/finance)
     WEATHER_API_KEY: str = os.getenv("WEATHER_API_KEY", "")
     ALPHAVANTAGE_API_KEY: str = os.getenv("ALPHAVANTAGE_API_KEY", "")
 
     # Embeddings / Vector DB
+    EMBEDDING_PROVIDER: str = os.getenv("EMBEDDING_PROVIDER", "huggingface")
     EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+    EMBEDDING_DEVICE: str = os.getenv("EMBEDDING_DEVICE", "cpu")
     VECTOR_DB: str = os.getenv("VECTOR_DB", "faiss")  # "faiss", "chroma", "milvus", etc.
     VECTOR_STORE_DIR: str = os.getenv("VECTOR_STORE_DIR", "data/vectorstore")
     DOCS_DIR: str = os.getenv("DOCS_DIR", "data/uploads")
+
+    # Upload directory (backwards-compatible name used in code)
+    UPLOAD_DIRECTORY: str = os.getenv("UPLOAD_DIRECTORY", os.getenv("DOCS_DIR", "data/uploads"))
 
     # LLM runtime hyperparameters
     LLM_TEMPERATURE: float = _parse_float(os.getenv("LLM_TEMPERATURE", None), 0.3)
@@ -75,6 +82,7 @@ class Settings:
     # Misc
     LOG_ROOT: str = os.getenv("LOG_ROOT", "logs")
     REQUESTS_PER_MINUTE: int = _parse_int(os.getenv("REQUESTS_PER_MINUTE", None), 60)
+    CHECKPOINT_DB_PATH: str = os.getenv("CHECKPOINT_DB_PATH", "data/checkpoints/checkpoints.db")
 
 # Instantiate a settings object that can be imported elsewhere:
 settings = Settings()
