@@ -217,3 +217,39 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual env
+venv/
+.env
+.env.*.local
+
+# Logs and temp
+logs/
+*.log
+*.tmp
+
+# Data and vector stores
+data/
+data/*
+!data/.gitkeep
+
+# System
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Pipenv / poetry
+Pipfile.lock
+poetry.lock
