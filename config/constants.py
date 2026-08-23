@@ -1,172 +1,60 @@
+# config/constants.py
 """
-constants.py
-
-This module contains all application-wide constants used throughout
-the AI ChatBot project.
-
-Keeping constants in one place improves maintainability and
-avoids hardcoding values across multiple modules.
+Application-wide constants and default paths.
+Keep this file simple and import-safe.
 """
 
 from pathlib import Path
+import os
 
-# =============================================================================
-# PROJECT INFORMATION
-# =============================================================================
+# Project information
+PROJECT_NAME = "ChatBot"
+PROJECT_VERSION = "1.0.0"
 
-PROJECT_NAME: str = "Production AI ChatBot"
-PROJECT_VERSION: str = "1.0.0"
-
-# =============================================================================
-# DIRECTORY PATHS
-# =============================================================================
-
-BASE_DIR = Path.cwd()
-
+# Base directories
+BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
+LOGS_DIR = BASE_DIR / "logs"
 
-UPLOAD_DIR = DATA_DIR / "uploads"
-
+# Document storage
+DOCS_DIR = DATA_DIR / "uploads"
 VECTOR_STORE_DIR = DATA_DIR / "vectorstore"
 
-LOG_DIR = BASE_DIR / "logs"
+# Supported document extensions for ingestion
+SUPPORTED_DOC_EXTENSIONS = {".pdf", ".txt", ".docx", ".md", ".pptx"}
 
-# =============================================================================
-# SUPPORTED DOCUMENT TYPES
-# =============================================================================
+# Default vector store options
+VECTOR_STORES = ("faiss", "chroma", "milvus")
 
-SUPPORTED_DOCUMENTS = [
-    ".pdf",
-    ".txt",
-    ".docx",
-]
+# Default embedding models
+DEFAULT_EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
-# =============================================================================
-# VECTOR DATABASES
-# =============================================================================
+# Default LLMs / tools names (used as keys in registries)
+TOOL_CHAT = "chat"
+TOOL_RAG = "rag"
+TOOL_SEARCH = "search"
+TOOL_WEATHER = "weather"
+TOOL_STOCKS = "stocks"
+TOOL_YOUTUBE = "youtube"
 
-FAISS = "faiss"
-CHROMA = "chroma"
-
-SUPPORTED_VECTOR_STORES = [
-    FAISS,
-    CHROMA,
-]
-
-# =============================================================================
-# EMBEDDING MODELS
-# =============================================================================
-
-DEFAULT_EMBEDDING_MODEL = (
-    "sentence-transformers/all-MiniLM-L6-v2"
-)
-
-# =============================================================================
-# GEMINI MODELS
-# =============================================================================
-
-DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
-
-# =============================================================================
-# LANGGRAPH NODES
-# =============================================================================
-
-ROUTER_NODE = "router"
-
-CHAT_NODE = "chat"
-
-RAG_NODE = "rag"
-
-SEARCH_NODE = "search"
-
-WEATHER_NODE = "weather"
-
-STOCK_NODE = "stock"
-
-YOUTUBE_NODE = "youtube"
-
-FINAL_NODE = "final"
-
-# =============================================================================
-# TOOL NAMES
-# =============================================================================
-
-CHAT_TOOL = "chat"
-
-RAG_TOOL = "rag"
-
-SEARCH_TOOL = "duckduckgo"
-
-WEATHER_TOOL = "weather"
-
-STOCK_TOOL = "stock"
-
-YOUTUBE_TOOL = "youtube"
-
-# =============================================================================
-# STREAMLIT SESSION KEYS
-# =============================================================================
-
+# Message/session constants
 SESSION_MESSAGES = "messages"
+SESSION_HISTORY_KEY = "chat_history"
 
-SESSION_CHAT_HISTORY = "chat_history"
+# File upload allowed list (same as extensions but explicit)
+ALLOWED_UPLOAD_SUFFIXES = tuple(SUPPORTED_DOC_EXTENSIONS)
 
-SESSION_VECTORSTORE = "vectorstore"
+# Timeouts and default values
+DEFAULT_REQUEST_TIMEOUT = 30  # seconds
+DEFAULT_MAX_TOKENS = 2048
 
-SESSION_UPLOADED_FILES = "uploaded_files"
-
-SESSION_GRAPH = "graph"
-
-# =============================================================================
-# RAG DEFAULTS
-# =============================================================================
-
-DEFAULT_CHUNK_SIZE = 1000
-
-DEFAULT_CHUNK_OVERLAP = 200
-
-TOP_K_RESULTS = 4
-
-# =============================================================================
-# LLM DEFAULTS
-# =============================================================================
-
-DEFAULT_TEMPERATURE = 0.3
-
-DEFAULT_MAX_OUTPUT_TOKENS = 2048
-
-# =============================================================================
-# CHATBOT SYSTEM MESSAGE
-# =============================================================================
-
-DEFAULT_SYSTEM_ROLE = (
-    "You are a helpful AI assistant."
-)
-
-# =============================================================================
-# WEATHER
-# =============================================================================
-
-DEFAULT_WEATHER_UNIT = "metric"
-
-# =============================================================================
-# UI
-# =============================================================================
-
-PAGE_TITLE = "AI ChatBot"
-
-PAGE_ICON = "🤖"
-
-SIDEBAR_TITLE = "AI ChatBot"
-
-WELCOME_MESSAGE = (
-    "Hello! How can I help you today?"
-)
-
-# =============================================================================
-# MISC
-# =============================================================================
-
+# Encoding & IO
 ENCODING = "utf-8"
 
-REQUEST_TIMEOUT = 30
+# Ensure directories exist when imported (safe to call)
+for p in (DATA_DIR, LOGS_DIR, DOCS_DIR, VECTOR_STORE_DIR):
+    try:
+        os.makedirs(p, exist_ok=True)
+    except Exception:
+        # If the environment does not allow creation at import-time, skip silently.
+        pass
